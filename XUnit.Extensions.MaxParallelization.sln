@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33103.184
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test.Parallelization", "Test.Parallelization\Test.Parallelization.csproj", "{D26851EA-DF67-4CDF-B0F8-6DEBFE477684}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XUnit.Extensions.MaxParallelization", "XUnit.Extensions.MaxParallelization\XUnit.Extensions.MaxParallelization.csproj", "{6D244AD2-51AA-4520-9218-C640E0944CA1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XUnit.Extensions.MaxParallelization.Tests", "XUnit.Extensions.MaxParallelization.Tests\XUnit.Extensions.MaxParallelization.Tests.csproj", "{F619C48E-0AA5-4C3A-8E8B-1F026464E627}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D26851EA-DF67-4CDF-B0F8-6DEBFE477684}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D26851EA-DF67-4CDF-B0F8-6DEBFE477684}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D26851EA-DF67-4CDF-B0F8-6DEBFE477684}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D26851EA-DF67-4CDF-B0F8-6DEBFE477684}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D244AD2-51AA-4520-9218-C640E0944CA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D244AD2-51AA-4520-9218-C640E0944CA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D244AD2-51AA-4520-9218-C640E0944CA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D244AD2-51AA-4520-9218-C640E0944CA1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F619C48E-0AA5-4C3A-8E8B-1F026464E627}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F619C48E-0AA5-4C3A-8E8B-1F026464E627}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F619C48E-0AA5-4C3A-8E8B-1F026464E627}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F619C48E-0AA5-4C3A-8E8B-1F026464E627}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7A485B07-3862-418A-849E-FCDEB80E889E}
+	EndGlobalSection
+EndGlobal
