@@ -30,4 +30,4 @@ jobs:
         PROJECT_FILE_PATH: XUnit.Extensions.MaxParallelization/XUnit.Extensions.MaxParallelization.csproj
         PACKAGE_NAME: XUnit.Extensions.MaxParallelization
         NUGET_KEY: ${{ secrets.NUGETKEY }}
-        VERSION_STATIC: 1.0
+        VERSION_STATIC: 1.0.1
