@@ -27,10 +27,7 @@ jobs:
     - name: Publish NuGet
       uses: brandedoutcast/publish-nuget@v2.5.5
       with:
-        # Filepath of the project to be packaged, relative to root of repository
         PROJECT_FILE_PATH: XUnit.Extensions.MaxParallelization/XUnit.Extensions.MaxParallelization.csproj
-        # NuGet package id, used for version detection & defaults to project name
         PACKAGE_NAME: XUnit.Extensions.MaxParallelization
-        # API key to authenticate with NuGet server
         NUGET_KEY: ${{ secrets.NUGETKEY }}
         VERSION_STATIC: 1.0
