@@ -87,6 +87,6 @@ public class ParallelTestCollectionRunner : XunitTestCollectionRunner
             new ExceptionAggregator(Aggregator), 
             CancellationTokenSource,
             fixtureRegistrations,
-            mergedContainer.Fixtures).RunAsync();
+            mergedContainer).RunAsync();
     }
 }

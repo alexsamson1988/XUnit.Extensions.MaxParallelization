@@ -1,7 +1,7 @@
 ﻿using XUnit.Extensions.MaxParallelization.Tests.Fixtures;
 
 namespace XUnit.Extensions.MaxParallelization.Tests.OrderingTests;
-[TestCaseOrderer("XUnit.Extensions.MaxParallelization.Tests.TestOrderer", "XUnit.Extensions.MaxParallelization.Tests")]
+[TestCaseOrderer("XUnit.Extensions.MaxParallelization.Tests.OrderingTests.TestOrderer", "XUnit.Extensions.MaxParallelization.Tests")]
 public class OrderingTests
 {
     private readonly OrderingFixture orderingFixture;

@@ -13,6 +13,7 @@ namespace XUnit.Extensions.MaxParallelization;
 public class ParallelTestClassRunner : XunitTestClassRunner
 {
     private readonly FixtureRegistrationCollection fixtureRegistrations;
+    private readonly FixtureContainer collectionContainer;
     private FixtureContainer classContainer;
     public ParallelTestClassRunner(
         ITestClass testClass, 
@@ -24,7 +25,7 @@ public class ParallelTestClassRunner : XunitTestClassRunner
         ExceptionAggregator aggregator, 
         CancellationTokenSource cancellationTokenSource,
         FixtureRegistrationCollection fixtureRegistrations,
-        IDictionary<Type, object> collectionFixtureMappings) : base(
+        FixtureContainer collectionContainer) : base(
             testClass, 
             @class, 
             testCases, 
@@ -33,17 +34,18 @@ public class ParallelTestClassRunner : XunitTestClassRunner
             testCaseOrderer, 
             aggregator, 
             cancellationTokenSource, 
-            collectionFixtureMappings)
+            null)
     {
         this.fixtureRegistrations = fixtureRegistrations;
+        this.collectionContainer = collectionContainer;
     }
     protected override async Task AfterTestClassStartingAsync()
     {
         var containerBuilder = new FixtureContainerBuilder();
-        classContainer = containerBuilder.BuildContainer(fixtureRegistrations, FixtureRegisterationLevel.Class);
-        await classContainer.InitializeAsync();
-        ClassFixtureMappings = classContainer.Fixtures;
-        
+        var classLevelContainer = containerBuilder.BuildContainer(fixtureRegistrations, FixtureRegisterationLevel.Class);
+        await classLevelContainer.InitializeAsync();
+        ClassFixtureMappings = classLevelContainer.Fixtures;
+        classContainer = FixtureContainerMerger.Merge(classLevelContainer, collectionContainer);
         await base.AfterTestClassStartingAsync();
     }
 
@@ -54,9 +56,7 @@ public class ParallelTestClassRunner : XunitTestClassRunner
     }
     protected override async Task<RunSummary> RunTestMethodsAsync()
     {
-        if (TestClass.IsParallelizationDisabled())
-            return await base.RunTestMethodsAsync().ConfigureAwait(false);
-
+         
         var summary = new RunSummary();
         IEnumerable<IXunitTestCase> orderedTestCases;
         try
@@ -73,9 +73,8 @@ public class ParallelTestClassRunner : XunitTestClassRunner
         var sequentialsTests = orderedTestCases.Where(testCase => testCase.TestMethod.IsParallelizationDisabled());
         var parallelTests = orderedTestCases.Where(testCase => !testCase.TestMethod.IsParallelizationDisabled());
 
-        var constructorArguments = CreateTestClassConstructorArguments();
         var methodGroups = parallelTests.GroupBy(tc => tc.TestMethod, TestMethodComparer.Instance);
-        var methodTasks = methodGroups.Select(m => RunTestMethodAsync(m.Key, (IReflectionMethodInfo)m.Key.Method, m, constructorArguments));
+        var methodTasks = methodGroups.Select(m => RunTestMethodAsync(m.Key, (IReflectionMethodInfo)m.Key.Method, m));
         var methodSummaries = await Task.WhenAll(methodTasks).ConfigureAwait(false);
 
         foreach (var methodSummary in methodSummaries)
@@ -87,14 +86,24 @@ public class ParallelTestClassRunner : XunitTestClassRunner
 
         foreach (var sequentialTestGroup in sequentialMethodGroups)
         {
-            summary.Aggregate(await RunTestMethodAsync(sequentialTestGroup.Key, (IReflectionMethodInfo)sequentialTestGroup.Key.Method, sequentialTestGroup, constructorArguments));
+            summary.Aggregate(await RunTestMethodAsync(sequentialTestGroup.Key, (IReflectionMethodInfo)sequentialTestGroup.Key.Method, sequentialTestGroup));
         }
 
         return summary;
     }
 
-    protected override Task<RunSummary> RunTestMethodAsync(ITestMethod testMethod, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases, object[] constructorArguments)
-        => new ParallelTestMethodRunner(testMethod, Class, method, testCases, DiagnosticMessageSink, MessageBus, new ExceptionAggregator(Aggregator), CancellationTokenSource, constructorArguments).RunAsync();
+    protected Task<RunSummary> RunTestMethodAsync(ITestMethod testMethod, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases)
+        => new ParallelTestMethodRunner(
+            testMethod, 
+            Class, 
+            method, 
+            testCases, 
+            DiagnosticMessageSink, 
+            MessageBus, 
+            new ExceptionAggregator(Aggregator), 
+            CancellationTokenSource,
+            classContainer,
+            fixtureRegistrations).RunAsync();
 
     private static Exception Unwrap(Exception ex)
     {
