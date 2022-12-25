@@ -33,3 +33,4 @@ jobs:
         PACKAGE_NAME: XUnit.Extensions.MaxParallelization
         # API key to authenticate with NuGet server
         NUGET_KEY: ${{ secrets.NUGETKEY }}
+        VERSION_STATIC: 1.0
