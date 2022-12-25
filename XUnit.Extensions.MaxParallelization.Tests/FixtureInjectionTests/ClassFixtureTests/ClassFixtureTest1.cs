@@ -18,7 +18,7 @@ public class ClassFixtureTest1
     [Fact]
     public void TestIncrement1()
     {
-        var expected = 3;
+        var expected = 2;
         var actual = classParallelTestFixture.Call();
         Assert.Equal(expected, actual);
     }
@@ -26,18 +26,11 @@ public class ClassFixtureTest1
     [Fact]
     public void TestIncrement2()
     {
-        var expected = 3;
+        var expected = 2;
         var actual = classParallelTestFixture.Call();
         Assert.Equal(expected, actual);
     }
 
-    [Fact]
-    public void TestIncrement3()
-    {
-        var expected = 3;
-        var actual = classParallelTestFixture.Call();
-        Assert.Equal(expected, actual);
-    }
 
 
 }

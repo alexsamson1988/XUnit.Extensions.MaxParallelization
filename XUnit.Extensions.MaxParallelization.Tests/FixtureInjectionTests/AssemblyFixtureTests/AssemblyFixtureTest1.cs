@@ -13,25 +13,10 @@ public class AssemblyFixtureTest1
     [Fact]
     public void TestIncrement1()
     {
-        var expected = 6;
+        var expected = 2;
         var actual = assemblyParallelTestFixture.Call();
         Assert.Equal(expected, actual);
     }
 
-    [Fact]
-    public void TestIncrement2()
-    {
-        var expected = 6;
-        var actual = assemblyParallelTestFixture.Call();
-        Assert.Equal(expected, actual);
-    }
-
-    [Fact]
-    public void TestIncrement3()
-    {
-        var expected = 6;
-        var actual = assemblyParallelTestFixture.Call();
-        Assert.Equal(expected, actual);
-    }
 
 }

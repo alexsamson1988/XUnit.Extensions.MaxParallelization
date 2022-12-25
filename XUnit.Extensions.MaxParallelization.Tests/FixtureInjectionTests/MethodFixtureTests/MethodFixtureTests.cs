@@ -30,11 +30,4 @@ public class MethodFixtureTests
         Assert.Equal(expected, actual);
     }
 
-    [Fact]
-    public void Increment1_Should_Return_1_3()
-    {
-        var expected = 1;
-        var actual = this.methodParallelTestFixture.Call();
-        Assert.Equal(expected, actual);
-    }
 }
