@@ -70,22 +70,23 @@ public class ParallelTestMethodRunner : XunitTestMethodRunner
         return summary;
     }
 
-    private async Task BuildConstructorArgumentsAsync(IXunitTestCase testCase)
+    private async Task<object[]> BuildConstructorArgumentsAsync(IXunitTestCase testCase)
     {
         var containerBuilder = new FixtureContainerBuilder();
         var methodLevelContainer = containerBuilder.BuildContainer(fixtureRegistrations, FixtureRegisterationLevel.Method);
         await methodLevelContainer.InitializeAsync();
 
         methodContainer = FixtureContainerMerger.Merge(methodLevelContainer, classContainer);
+        var mergedMethodContainer = FixtureContainerMerger.Merge(classContainer, methodContainer);
+
+        return classInfos.CreateTestClassConstructorArguments(methodContainer, Aggregator);
     }
 
     
 
     protected override async Task<RunSummary> RunTestCaseAsync(IXunitTestCase testCase)
     {
-        await BuildConstructorArgumentsAsync(testCase);
-        var mergedMethodContainer = FixtureContainerMerger.Merge(classContainer, methodContainer);
-        var args = classInfos.CreateTestClassConstructorArguments(methodContainer, Aggregator);
+        var args = await BuildConstructorArgumentsAsync(testCase);
 
         var action = () => testCase.RunAsync(diagnosticMessageSink, MessageBus, args, new ExceptionAggregator(Aggregator), CancellationTokenSource);
 
