@@ -24,10 +24,12 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
     - run: dotnet test XUnit.Extensions.MaxParallelization.sln --configuration Release
-    - run: dotnet pack XUnit.Extensions.MaxParallelization.sln --configuration Release --output ${{ env.NuGetDirectory }} --no-build /bl
-    - uses: actions/upload-artifact@v2
+    - name: Publish NuGet
+      uses: brandedoutcast/publish-nuget@v2.5.5
       with:
-        name: nuget
-        if-no-files-found: error
-        retention-days: 3
-        path: ${{ env.NuGetDirectory }}/**/*
+        # Filepath of the project to be packaged, relative to root of repository
+        PROJECT_FILE_PATH: XUnit.Extensions.MaxParallelization/XUnit.Extensions.MaxParallelization.csproj
+        # NuGet package id, used for version detection & defaults to project name
+        PACKAGE_NAME: XUnit.Extensions.MaxParallelization
+        # API key to authenticate with NuGet server
+        NUGET_KEY: ${{ secrets.NUGETKEY }}
