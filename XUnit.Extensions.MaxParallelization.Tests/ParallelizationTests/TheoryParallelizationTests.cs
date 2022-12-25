@@ -18,11 +18,9 @@ public class TheoryParallelizationTests
     [Theory]
     [InlineData(1)]
     [InlineData(2)]
-    [InlineData(3)]
-    [InlineData(4)]
     public void TestTheoryParallelization(int i)
     {
-        var expected = 4;
+        var expected = 2;
         var actual = classParallelTestFixture.Call();
         Assert.Equal(expected, actual);
     }
