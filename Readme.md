@@ -2,7 +2,7 @@
 
 ## Setup
 Install the nuget package:
-`NuGet\Install-Package XUnit.Extensions.MaxParallelization -Version 1.0.0`
+`NuGet\Install-Package XUnit.Extensions.MaxParallelization`
 
 Then you need to add the following assembly attribute: 
 `[assembly: TestFramework("XUnit.Extensions.MaxParallelization.ParallelTestFramework", "XUnit.Extensions.MaxParallelization")]`
