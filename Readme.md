@@ -1,19 +1,19 @@
-#XUnit.Extensions.MaxParallelization
+# XUnit.Extensions.MaxParallelization
 
-##Setup
+## Setup
 Install the nuget package:
 `NuGet\Install-Package XUnit.Extensions.MaxParallelization -Version 1.0.0`
 
 Then you need to add the following assembly attribute: 
 `[assembly: TestFramework("XUnit.Extensions.MaxParallelization.ParallelTestFramework", "XUnit.Extensions.MaxParallelization")]`
 
-##Parallelization
+## Parallelization
 With this library every test cases, classes and collections will run in parallel. Therefore if you don't want a test case a class or a collection you will need to set the `DisableParallelization` attribute over the class or the test method on which you do not want to run in parallel.
 
 For collections you need to set it inside the `CollectionDefinition` attribute likeso:
 `[CollectionDefinition("DisableParallelization",DisableParallelization = true)]`
 
-##Dependency Injection
+## Dependency Injection
 This extension change the way dependency injection is handled in XUnit. I wanted to make this more like it is handled in ASP.Net.
 ```
 public class FixtureRegister : IFixtureRegister
