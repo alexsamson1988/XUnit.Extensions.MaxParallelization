@@ -24,6 +24,12 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
     - run: dotnet build XUnit.Extensions.MaxParallelization.sln --configuration Release
+    - name: Release Tag Updater
+      # You may pin to the exact commit or the version.
+      # uses: sersoft-gmbh/running-release-tags-action@dfe44738dec3782a5702b78339d2c979fbcb516c
+      uses: sersoft-gmbh/running-release-tags-action@v2.1.1
+      with:
+        update-major: false
     - name: Publish NuGet
       uses: brandedoutcast/publish-nuget@v2.5.5
       with:
