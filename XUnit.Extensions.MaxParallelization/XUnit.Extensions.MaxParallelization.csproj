@@ -40,7 +40,8 @@
     <PackageReference Include="xunit.extensibility.execution" Version="2.4.2" />
   </ItemGroup>
 	<ItemGroup>
-		<None Update="/../README.md">
+		<None Include="$(MSBuildProjectDirectory)/../README.md" Pack="true" PackagePath="" />
+		<None Update="README.md">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
