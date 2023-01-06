@@ -31,7 +31,7 @@ jobs:
         fetch-depth: 0 # Get all history to allow automatic versioning using MinVer
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
-    - run: dotnet pack --configuration Release --output ${{ env.NuGetDirectory }} -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
+    - run: dotnet pack --configuration Release --output ${{ env.NuGetDirectory }}  -p:PackageVersion=${{ github.ref }} -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
     - uses: actions/upload-artifact@v3
       with:
         name: nuget
