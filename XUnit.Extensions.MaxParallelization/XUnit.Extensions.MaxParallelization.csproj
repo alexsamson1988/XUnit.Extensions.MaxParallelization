@@ -6,10 +6,14 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-	<ItemGroup>
-		<None Include="\..\README.md" Pack="true" PackagePath="" />
-	</ItemGroup>
+  <ItemGroup>
+    <None Remove="Readme.md" />
+  </ItemGroup>
 
+
+	<ItemGroup>
+		<Page Include="Readme.md" />
+	</ItemGroup>
 	<PropertyGroup>
 		<EnablePackageValidation>true</EnablePackageValidation>
 	</PropertyGroup>
