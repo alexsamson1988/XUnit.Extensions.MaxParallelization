@@ -14,17 +14,12 @@
 
 	<PropertyGroup>
 		<EnablePackageValidation>true</EnablePackageValidation>
-
-		<!-- Optional: Detect breaking changes from a previous version -->
-		<!-- <PackageValidationBaselineVersion>1.0.0</PackageValidationBaselineVersion> -->
 	</PropertyGroup>
 
 	<PropertyGroup>
 		<Authors>Alex Samson</Authors>
 		<Description>This package enable parallelization on all level so all tests run in parallel. This package also change the way fixture injection is handled from the regular xunit.</Description>
 		<PackageProjectUrl>https://github.com/alexsamson1988/XUnit.Extensions.MaxParallelization</PackageProjectUrl>
-
-		<!-- A list of tags to help the search engine to understand the content of the package -->
 		<PackageTags>library XUnit Test Parallelization</PackageTags>
 	</PropertyGroup>
 
