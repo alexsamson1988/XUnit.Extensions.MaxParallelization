@@ -8,7 +8,7 @@ Then you need to add the following assembly attribute:
 `[assembly: TestFramework("XUnit.Extensions.MaxParallelization.ParallelTestFramework", "XUnit.Extensions.MaxParallelization")]`
 
 ## Parallelization
-With this library every test cases, classes and collections will run in parallel. Therefore if you don't want a test case a class or a collection you will need to set the `DisableParallelization` attribute over the class or the test method on which you do not want to run in parallel.
+With this library every test cases, classes and collections will run in parallel. Therefore if you don't want a test case, a class or a collection to rune in parallel you will need to set the `DisableParallelization` attribute over the class or the test method on which you do not want to run in parallel.
 
 For collections you need to set it inside the `CollectionDefinition` attribute likeso:
 `[CollectionDefinition("DisableParallelization",DisableParallelization = true)]`
