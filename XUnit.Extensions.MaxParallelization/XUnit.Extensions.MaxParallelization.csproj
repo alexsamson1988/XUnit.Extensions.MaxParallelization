@@ -27,6 +27,15 @@
 		<!-- A list of tags to help the search engine to understand the content of the package -->
 		<PackageTags>library XUnit Test Parallelization</PackageTags>
 	</PropertyGroup>
+
+	<PropertyGroup>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
 	
 	<PropertyGroup>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
