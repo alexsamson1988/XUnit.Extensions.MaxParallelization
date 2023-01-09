@@ -41,4 +41,4 @@ The `FixtureRegisterationLevel` parameter is there to declare the scope of the d
 
 You can pass an instance as a parameter but unless the scope is assembly the dependency will be reinstanciated at some point.
 
-This code is greatly inspired by [this](https://github.com/meziantou/Meziantou.Xunit.ParallelTestFramework) repository.
+This code is greatly inspired by [this](https://github.com/meziantou/Meziantou.Xunit.ParallelTestFramework) repository from [Gérald Barré](https://github.com/meziantou).
