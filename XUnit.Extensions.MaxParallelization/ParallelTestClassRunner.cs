@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit;
+﻿using System.Reflection;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 using XUnit.Extensions.MaxParallelization.DI;
@@ -42,7 +36,7 @@ public class ParallelTestClassRunner : XunitTestClassRunner
     protected override async Task AfterTestClassStartingAsync()
     {
         var containerBuilder = new FixtureContainerBuilder();
-        var classLevelContainer = containerBuilder.BuildContainer(fixtureRegistrations, FixtureRegisterationLevel.Class);
+        var classLevelContainer = containerBuilder.BuildContainer(fixtureRegistrations, FixtureRegisterationLevel.Class,collectionContainer);
         await classLevelContainer.InitializeAsync();
         ClassFixtureMappings = classLevelContainer.Fixtures;
         classContainer = FixtureContainerMerger.Merge(classLevelContainer, collectionContainer);
@@ -72,30 +66,53 @@ public class ParallelTestClassRunner : XunitTestClassRunner
 
         var sequentialsTests = orderedTestCases.Where(testCase => testCase.TestMethod.IsParallelizationDisabled());
         var parallelTests = orderedTestCases.Where(testCase => !testCase.TestMethod.IsParallelizationDisabled());
+        
+        await RunParallelTestCasesAsync(parallelTests, summary);
 
-        var methodGroups = parallelTests.GroupBy(tc => tc.TestMethod, TestMethodComparer.Instance);
-        var methodTasks = methodGroups.Select(m => RunTestMethodAsync(m.Key, (IReflectionMethodInfo)m.Key.Method, m));
-        var methodSummaries = await Task.WhenAll(methodTasks).ConfigureAwait(false);
+        await RunSequentialTestCasesAsync(sequentialsTests, summary);
+        
 
-        foreach (var methodSummary in methodSummaries)
-        {
-            summary.Aggregate(methodSummary);
-        } 
+        return summary;
+    }
 
-        var sequentialMethodGroups = sequentialsTests.GroupBy(tc => tc.TestMethod, TestMethodComparer.Instance).ToList();
+    private async Task RunSequentialTestCasesAsync(IEnumerable<IXunitTestCase> sequentialsTestCases, RunSummary summary)
+    {
+        var sequentialMethodGroups = sequentialsTestCases.GroupBy(tc => tc.TestMethod, TestMethodComparer.Instance).ToList();
 
         foreach (var sequentialTestGroup in sequentialMethodGroups)
         {
             summary.Aggregate(await RunTestMethodAsync(sequentialTestGroup.Key, (IReflectionMethodInfo)sequentialTestGroup.Key.Method, sequentialTestGroup));
         }
-
-        return summary;
     }
 
-    protected Task<RunSummary> RunTestMethodAsync(ITestMethod testMethod, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases)
-        => new ParallelTestMethodRunner(
+    private async Task RunParallelTestCasesAsync(IEnumerable<IXunitTestCase> parallelTestCases, RunSummary summary)
+    {
+        var methodGroups = parallelTestCases.GroupBy(tc => tc.TestMethod, TestMethodComparer.Instance).ToList();
+        var methodTasks = methodGroups.Select(m => RunTestMethodAsync(m.Key, (IReflectionMethodInfo)m.Key.Method, m));
+
+
+        await Parallel.ForEachAsync(methodGroups, async (methodGroup, cancellationToken) =>
+        {
+            var methodSummary = await RunTestMethodAsync(methodGroup.Key, (IReflectionMethodInfo)methodGroup.Key.Method, methodGroup);
+            summary.Aggregate(methodSummary);
+        });
+    }
+    
+    private async Task<object[]> BuildConstructorArgumentsAsync(IXunitTestCase testCase)
+    {
+        var containerBuilder = new FixtureContainerBuilder();
+        var methodLevelContainer = containerBuilder.BuildContainer(fixtureRegistrations, FixtureRegisterationLevel.Method, classContainer);
+        await methodLevelContainer.InitializeAsync();
+
+        var methodContainer = FixtureContainerMerger.Merge(methodLevelContainer, classContainer);
+
+        return Class.CreateTestClassConstructorArguments(methodContainer, Aggregator);
+    }
+
+    protected async Task<RunSummary> RunTestMethodAsync(ITestMethod testMethod, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases)
+        => await new ParallelTestMethodRunner(
             testMethod, 
-            Class, 
+            Class,
             method, 
             testCases, 
             DiagnosticMessageSink, 

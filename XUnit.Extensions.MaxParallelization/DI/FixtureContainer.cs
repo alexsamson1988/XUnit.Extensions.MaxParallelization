@@ -32,20 +32,20 @@ public class FixtureContainer: IAsyncLifetime
 			fixtures.Add(fixtureRegistration.FixtureType, fixtureRegistration.Instance);
 	}
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
 		var fixturesToInitialize = fixtures.Where(fixture => fixture.Key.GetInterface(nameof(IAsyncLifetime)) != null)
 																		.Select(fixture => ((IAsyncLifetime)fixture.Value).InitializeAsync());
-		return Task.WhenAll(fixturesToInitialize);
+        await Task.WhenAll(fixturesToInitialize).ConfigureAwait(false);
     }
 
-    public Task DisposeAsync()
+    public async Task DisposeAsync()
 	{
 		var fixtureToDisposes = fixtures.Where(fixture => fixture.Key.GetInterface(nameof(IDisposable)) != null)
                                                           .Select(fixture => new Task(() => ((IDisposable)fixture.Value).Dispose()))
 										.Union(fixtures.Where(fixture => fixture.Key.GetInterface(nameof(IAsyncLifetime)) != null)
                                                           .Select(fixture => ((IAsyncLifetime)fixture.Value).DisposeAsync()));
-        return Task.WhenAll(fixtureToDisposes);
+        await Task.WhenAll(fixtureToDisposes).ConfigureAwait(false);
     }
     
 }

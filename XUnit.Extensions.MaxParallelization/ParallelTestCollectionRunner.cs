@@ -39,7 +39,7 @@ public class ParallelTestCollectionRunner : XunitTestCollectionRunner
     protected override async Task AfterTestCollectionStartingAsync()
     {
         var containerBuilder = new FixtureContainerBuilder();
-        CollectionContainer = containerBuilder.BuildContainer(fixtureRegistrations, FixtureRegisterationLevel.Collection);
+        CollectionContainer = containerBuilder.BuildContainer(fixtureRegistrations, FixtureRegisterationLevel.Collection,AssemblyFixtureContainer);
         await CollectionContainer.InitializeAsync();
         await base.AfterTestCollectionStartingAsync();
     }
@@ -64,7 +64,7 @@ public class ParallelTestCollectionRunner : XunitTestCollectionRunner
                     (IReflectionTypeInfo)testCasesByClass.Key.Class,
                     testCasesByClass));
 
-        var classSummaries = await Task.WhenAll(testClassesTasks);
+        var classSummaries = await Task.WhenAll(testClassesTasks).ConfigureAwait(false); ;
 
         foreach (var classSummary in classSummaries)
         {

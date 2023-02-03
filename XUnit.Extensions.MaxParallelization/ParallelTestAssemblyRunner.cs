@@ -34,7 +34,7 @@ public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
     protected virtual async Task CreateAssemlbyContainerAsync()
     {
         var containerBuilder = new FixtureContainerBuilder();
-        AssemblyContainer = containerBuilder.BuildContainer(fixtureRegistrationCollection, FixtureRegisterationLevel.Assembly);
+        AssemblyContainer = containerBuilder.BuildContainer(fixtureRegistrationCollection, FixtureRegisterationLevel.Assembly, null);
         await AssemblyContainer.InitializeAsync();
     }
 
@@ -47,7 +47,7 @@ public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
 
         var collectionTasks = OrderTestCollections().Select(collection => RunTestCollectionAsync(messageBus, collection.Item1, collection.Item2, cancellationTokenSource));
 
-        var summaries = await Task.WhenAll(collectionTasks);
+        var summaries = await Task.WhenAll(collectionTasks).ConfigureAwait(false);
 
         foreach (var collectionSummary in summaries)
         {
