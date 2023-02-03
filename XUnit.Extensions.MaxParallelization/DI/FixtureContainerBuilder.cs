@@ -1,6 +1,4 @@
 ﻿using System.Reflection;
-using Xunit;
-using XUnit.Extensions.MaxParallelization.Extensions;
 
 namespace XUnit.Extensions.MaxParallelization.DI;
 public class FixtureContainerBuilder
