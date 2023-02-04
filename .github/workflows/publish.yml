@@ -32,6 +32,7 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
     - name: Build
+      if: ${{ github.event.release.tag_name != '' }}
       run: dotnet build
     - name: tagValueOutput
       run: echo "${{ github.event.release.tag_name }}"
