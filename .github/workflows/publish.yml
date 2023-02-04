@@ -34,7 +34,7 @@ jobs:
     - name: Build
       run: dotnet build
     - name: tagValueOutput
-      run: echo ${{ github.event.release.tag_name }}
+      run: echo "$github.event.release.tag_name"
       
   deploy:
     # Publish only when creating a GitHub Release
