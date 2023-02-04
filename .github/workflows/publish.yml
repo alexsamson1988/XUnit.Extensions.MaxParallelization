@@ -29,9 +29,12 @@ jobs:
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0 # Get all history to allow automatic versioning using MinVer
-    - name: Run unit test
-      uses: actions/setup-dotnet@v3
-    - run: dotnet test --no-restore --verbosity normal
+    - name: Install dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build
+    - name: Test with the dotnet CLI
+      run: dotnet test
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
     - run: dotnet pack --configuration Release --output ${{ env.NuGetDirectory }}  -p:PackageVersion=${{ github.event.release.tag_name }} -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
