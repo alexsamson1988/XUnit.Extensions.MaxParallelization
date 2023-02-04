@@ -34,8 +34,8 @@ jobs:
     - name: Build
       run: dotnet build
     - name: Pack create nuget package
-      if: ${{ github.event.release.tag_name != '' }}
       uses: actions/setup-dotnet@v3
+      if: ${{ github.event.release.tag_name != '' }}
     - run: dotnet pack --configuration Release --output ${{ env.NuGetDirectory }}  -p:PackageVersion=${{ github.event.release.tag_name }} -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
     - uses: actions/upload-artifact@v3
       with:
