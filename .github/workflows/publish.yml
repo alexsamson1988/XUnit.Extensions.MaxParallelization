@@ -33,8 +33,7 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build
-    - name: Pack create nuget package
-      uses: actions/setup-dotnet@v3
+    - name: Create nuget package
       if: ${{ github.event.release.tag_name != '' }}
     - run: dotnet pack --configuration Release --output ${{ env.NuGetDirectory }}  -p:PackageVersion=${{ github.event.release.tag_name }} -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
     - uses: actions/upload-artifact@v3
