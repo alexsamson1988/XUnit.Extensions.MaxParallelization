@@ -32,6 +32,9 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
     - run: dotnet pack --configuration Release --output ${{ env.NuGetDirectory }}  -p:PackageVersion=${{ github.event.release.tag_name }} -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+    - run: dotnet test --no-restore --verbosity normal
     - uses: actions/upload-artifact@v3
       with:
         name: nuget
