@@ -32,10 +32,16 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
     - name: Build
-      if: ${{ github.event.release.tag_name != '' }}
       run: dotnet build
-    - name: tagValueOutput
-      run: echo "${{ github.event.release.tag_name }}"
+    - name: Create nuget package
+      if: ${{ github.event.release.tag_name != '' }}
+      run: dotnet pack --configuration Release --output ${{ env.NuGetDirectory }}  -p:PackageVersion=${{ github.event.release.tag_name }} -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
+    - uses: actions/upload-artifact@v3
+      with:
+        name: nuget
+        if-no-files-found: error
+        retention-days: 7
+        path: ${{ env.NuGetDirectory }}/*.nupkg
       
   deploy:
     # Publish only when creating a GitHub Release
