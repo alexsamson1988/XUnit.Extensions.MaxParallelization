@@ -9,8 +9,7 @@ Then you need to add the following assembly attribute:
 `[assembly: TestFramework("XUnit.Extensions.MaxParallelization.ParallelTestFramework", "XUnit.Extensions.MaxParallelization")]`
 
 ## Parallelization
-With this library every test cases, classes and collections will run in parallel. Therefore if you don't want a test case, a class or a collection to run in parallel you will need to set the `DisableParallelization` attribute over the class or the test method on which you do not want to run in parallel.
-
+With this library every test cases, classes and collections will run in parallel. Therefore if you don't want a test case, a class or a collection to run in parallel you will need to set the `DisableParallelization` attribute over the class or the test method on which you do not want to run in parallel.+6458
 For collections you need to set it inside the `CollectionDefinition` attribute like so:
 `[CollectionDefinition("DisableParallelization",DisableParallelization = true)]`
 
@@ -21,11 +20,14 @@ public class FixtureRegister : IFixtureRegister
 {
     public void RegisterFixtures(FixtureRegistrationCollection container)
     {
-        container.AddFixture<OrderingFixture>()
-                 .AddFixture<CollectionParallelTestFixture>(FixtureRegisterationLevel.Collection)
-                 .AddFixture<AssemblyParallelTestFixture>(FixtureRegisterationLevel.Assembly)
-                 .AddFixture<ClassParallelTestFixture>(FixtureRegisterationLevel.Class)
-                 .AddFixture<MethodParallelTestFixture>(FixtureRegisterationLevel.Method);
+        container.AddAssemblyFixture<TestLongSetupFixture>()
+                 .AddAssemblyFixture<AssemblyParallelTestFixture>()
+                 .AddCollectionFixture<CollectionParallelTestFixture>()
+                 .AddClassFixture<ClassParallelTestFixture>()
+                 .AddClassFixture<ISomeService, SomeService>()
+                 .AddTestMethodFixture<MethodParallelTestFixture>()
+                 .AddTestMethodFixture<DependentFixture>()
+                 .AddClassFixture<OrderingFixture>();
     }
 }
 ```
