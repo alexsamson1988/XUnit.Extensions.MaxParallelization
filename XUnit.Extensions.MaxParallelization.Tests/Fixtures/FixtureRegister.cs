@@ -1,4 +1,5 @@
 ﻿using XUnit.Extensions.MaxParallelization.DI;
+using XUnit.Extensions.MaxParallelization.Tests.Fixtures.InterfaceTestFixture;
 using XUnit.Extensions.MaxParallelization.Tests.Fixtures.Parallel;
 using XUnit.Extensions.MaxParallelization.Tests.LongRunningTests;
 
@@ -13,6 +14,7 @@ public class FixtureRegister : IFixtureRegister
                  .AddFixture<ClassParallelTestFixture>(FixtureRegisterationLevel.Class)
                  .AddFixture<MethodParallelTestFixture>(FixtureRegisterationLevel.Method)
                  .AddFixture<TestLongSetupFixture>(FixtureRegisterationLevel.Assembly)
-                 .AddFixture<DependentFixture>(FixtureRegisterationLevel.Method);
+                 .AddFixture<DependentFixture>(FixtureRegisterationLevel.Method)
+                 .AddClassFixture<ISomeService,SomeService>();
     }
 }

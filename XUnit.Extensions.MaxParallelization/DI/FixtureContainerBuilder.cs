@@ -6,50 +6,75 @@ public class FixtureContainerBuilder
     private IList<FixtureRegistration> fixtureRegistrations;
     private FixtureRegisterationLevel fixtureRegisterationLevel;
     private FixtureContainer? parentContainer;
+
     public FixtureContainer BuildContainer(
          FixtureRegistrationCollection fixtureRegistrationCollection,
         FixtureRegisterationLevel fixtureRegisterationLevel,
         FixtureContainer? parentContainer)
     {
-        this.parentContainer = parentContainer;
-        this.fixtureRegisterationLevel = fixtureRegisterationLevel;
-        fixtureRegistrations = fixtureRegistrationCollection
-                                                            .GetFixtureRegistrations()
-                                                            .Where(fixtureRegistration => fixtureRegistration.RegisterationLevel == fixtureRegisterationLevel)
-                                                            .Select(m => new FixtureRegistration(m.FixtureType,m.RegisterationLevel))
-                                                            .ToList();
-        if (!fixtureRegistrations.Any())
-            return new FixtureContainer(new List<FixtureRegistration>(),fixtureRegisterationLevel);
+        InitializeProperties(fixtureRegisterationLevel, parentContainer);
+        PopulateFixtureRegistrations(fixtureRegistrationCollection);
 
-        var needToBuildContainer = fixtureRegistrations.Any(fixture => fixture.Instance == null) || fixtureRegisterationLevel != FixtureRegisterationLevel.Assembly;
-        if (!needToBuildContainer)
+        if (!fixtureRegistrations.Any())
+            return CreateEmptyFixtureContainer();
+
+        if (!NeedToBuildContainer())
             return new FixtureContainer(fixtureRegistrations, fixtureRegisterationLevel);
 
+        BuildFixtures();
+        return new FixtureContainer(fixtureRegistrations, fixtureRegisterationLevel);
+    }
+
+    private void InitializeProperties(FixtureRegisterationLevel fixtureRegisterationLevel, FixtureContainer? parentContainer)
+    {
+        this.parentContainer = parentContainer;
+        this.fixtureRegisterationLevel = fixtureRegisterationLevel;
+    }
+
+    private void PopulateFixtureRegistrations(FixtureRegistrationCollection fixtureRegistrationCollection)
+    {
+        fixtureRegistrations = fixtureRegistrationCollection
+            .GetFixtureRegistrations()
+            .Where(fixtureRegistration => fixtureRegistration.RegisterationLevel == fixtureRegisterationLevel)
+            .Select(fixtureRegistration => new FixtureRegistration(fixtureRegistration.FixtureType,fixtureRegistration.FixtureInstanceType, fixtureRegistration.RegisterationLevel))
+            .ToList();
+    }
+
+    private FixtureContainer CreateEmptyFixtureContainer()
+    {
+        return new FixtureContainer(new List<FixtureRegistration>(), fixtureRegisterationLevel);
+    }
+
+    private bool NeedToBuildContainer()
+    {
+        return fixtureRegistrations.Any(fixture => fixture.Instance == null) || fixtureRegisterationLevel != FixtureRegisterationLevel.Assembly;
+    }
+
+    private void BuildFixtures()
+    {
         foreach (var fixture in GetFixturesToBuild())
         {
-            fixture.Instance = BuildFixture(fixture.FixtureType);
+            fixture.Instance = BuildFixture(fixture.FixtureInstanceType);
         }
-        return new FixtureContainer(fixtureRegistrations, fixtureRegisterationLevel);
     }
 
     private IList<FixtureRegistration> GetFixturesToBuild()
     {
         return fixtureRegistrations
-            .Where(fixtureRegistration => fixtureRegistration.RegisterationLevel == fixtureRegisterationLevel && ( fixtureRegistration.Instance == null ||  fixtureRegisterationLevel != FixtureRegisterationLevel.Assembly))
+            .Where(fixtureRegistration => fixtureRegistration.RegisterationLevel == fixtureRegisterationLevel && (fixtureRegistration.Instance == null || fixtureRegisterationLevel != FixtureRegisterationLevel.Assembly))
             .ToList();
     }
 
     private object BuildFixture(Type type)
     {
         var ctors = type.GetConstructors();
-        
+
         foreach (var ctor in ctors.OrderBy(c => c.GetParameters().Length))
         {
             var fixtureInstance = BuildFixtureUsingConstructor(ctor);
             if (fixtureInstance != null)
                 return fixtureInstance;
         }
-        
 
         throw new Exception($"Container cannot instanciate type {type.Name} you need to either declare a parameterless constructor or provide all needed dependencies and sub dependencies needed to build the fixture on the container");
     }
@@ -60,14 +85,18 @@ public class FixtureContainerBuilder
         {
             return ctor.Invoke(null);
         }
-        var parametersAreAllInFixtures = ctor.GetParameters().All(p => IsTypeInFixtures(p.ParameterType));
 
-        if (!parametersAreAllInFixtures)
+        if (!AllParametersInFixtures(ctor))
             return null;
 
         var constructorParameters = GetConstructorParameters(ctor);
 
         return ctor.Invoke(constructorParameters);
+    }
+
+    private bool AllParametersInFixtures(ConstructorInfo ctor)
+    {
+        return ctor.GetParameters().All(p => IsTypeInFixtures(p.ParameterType));
     }
     private object[] GetConstructorParameters(ConstructorInfo ctor)
     {
@@ -92,7 +121,7 @@ public class FixtureContainerBuilder
         if(fixtureRegistration == null && parentContainer != null)
         {
             var fixture = parentContainer.Fixtures.FirstOrDefault(fixture => fixture.Key == fixtureType);
-            fixtureRegistration = new FixtureRegistration(fixtureType, fixture.Value, parentContainer.ContainerLevel);
+            fixtureRegistration = new FixtureRegistration(fixtureType, fixtureType, fixture.Value, parentContainer.ContainerLevel);
         }
         return fixtureRegistration;
     }
