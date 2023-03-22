@@ -8,13 +8,15 @@ public class FixtureRegister : IFixtureRegister
 {
     public void RegisterFixtures(FixtureRegistrationCollection container)
     {
-        container.AddFixture<OrderingFixture>()
-                 .AddFixture<CollectionParallelTestFixture>(FixtureRegisterationLevel.Collection)
-                 .AddFixture<AssemblyParallelTestFixture>(FixtureRegisterationLevel.Assembly)
-                 .AddFixture<ClassParallelTestFixture>(FixtureRegisterationLevel.Class)
-                 .AddFixture<MethodParallelTestFixture>(FixtureRegisterationLevel.Method)
-                 .AddFixture<TestLongSetupFixture>(FixtureRegisterationLevel.Assembly)
-                 .AddFixture<DependentFixture>(FixtureRegisterationLevel.Method)
-                 .AddClassFixture<ISomeService,SomeService>();
+        container.AddAssemblyFixture<TestLongSetupFixture>()
+                 .AddAssemblyFixture<AssemblyParallelTestFixture>()
+                 .AddCollectionFixture<CollectionParallelTestFixture>()
+                 .AddClassFixture<ClassParallelTestFixture>()
+                 .AddClassFixture<ISomeService, SomeService>()
+                 .AddTestMethodFixture<MethodParallelTestFixture>()
+                 .AddTestMethodFixture<DependentFixture>()
+                 .AddClassFixture<OrderingFixture>();
+                 
+                 
     }
 }
