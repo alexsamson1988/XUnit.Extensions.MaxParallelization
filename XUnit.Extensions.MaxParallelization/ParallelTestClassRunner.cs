@@ -6,8 +6,10 @@ using XUnit.Extensions.MaxParallelization.DI;
 namespace XUnit.Extensions.MaxParallelization;
 public class ParallelTestClassRunner : XunitTestClassRunner
 {
-    private readonly FixtureRegistrationCollection fixtureRegistrations;
-    private readonly FixtureContainer collectionContainer;
+    private readonly FixtureRegistrationCollection _fixtureRegistrations;
+    private readonly FixtureContainer _collectionContainer;
+    private readonly SemaphoreSlim _testClassesSemaphore;
+    private readonly SemaphoreSlim _testCasesSemaphore;
     private FixtureContainer classContainer;
     public ParallelTestClassRunner(
         ITestClass testClass, 
@@ -19,7 +21,9 @@ public class ParallelTestClassRunner : XunitTestClassRunner
         ExceptionAggregator aggregator, 
         CancellationTokenSource cancellationTokenSource,
         FixtureRegistrationCollection fixtureRegistrations,
-        FixtureContainer collectionContainer) : base(
+        FixtureContainer collectionContainer,
+        SemaphoreSlim testClassesSemaphore,
+        SemaphoreSlim testCasesSemaphore) : base(
             testClass, 
             @class, 
             testCases, 
@@ -30,17 +34,57 @@ public class ParallelTestClassRunner : XunitTestClassRunner
             cancellationTokenSource, 
             null)
     {
-        this.fixtureRegistrations = fixtureRegistrations;
-        this.collectionContainer = collectionContainer;
+        this._fixtureRegistrations = fixtureRegistrations;
+        this._collectionContainer = collectionContainer;
+        this._testClassesSemaphore = testClassesSemaphore;
+        this._testCasesSemaphore = testCasesSemaphore;
     }
     protected override async Task AfterTestClassStartingAsync()
     {
         var containerBuilder = new FixtureContainerBuilder();
-        var classLevelContainer = containerBuilder.BuildContainer(fixtureRegistrations, FixtureRegisterationLevel.Class,collectionContainer);
+        var classLevelContainer = containerBuilder.BuildContainer(_fixtureRegistrations, FixtureRegisterationLevel.Class,_collectionContainer);
         await classLevelContainer.InitializeAsync();
         ClassFixtureMappings = classLevelContainer.Fixtures;
-        classContainer = FixtureContainerMerger.Merge(classLevelContainer, collectionContainer);
+        classContainer = FixtureContainerMerger.Merge(classLevelContainer, _collectionContainer);
         await base.AfterTestClassStartingAsync();
+    }
+
+    public async Task<RunSummary> RunTestsAsync()
+    {
+        _testClassesSemaphore.Wait();
+        try
+        {
+            var classSummary = new RunSummary();
+
+            if (!MessageBus.QueueMessage(new TestClassStarting(TestCases.Cast<ITestCase>(), TestClass)))
+                CancellationTokenSource.Cancel();
+            else
+            {
+                try
+                {
+                    await AfterTestClassStartingAsync();
+                    classSummary = await RunTestMethodsAsync();
+
+                    Aggregator.Clear();
+                    await BeforeTestClassFinishedAsync();
+
+                    if (Aggregator.HasExceptions)
+                        if (!MessageBus.QueueMessage(new TestClassCleanupFailure(TestCases.Cast<ITestCase>(), TestClass, Aggregator.ToException())))
+                            CancellationTokenSource.Cancel();
+                }
+                finally
+                {
+                    if (!MessageBus.QueueMessage(new TestClassFinished(TestCases.Cast<ITestCase>(), TestClass, classSummary.Time, classSummary.Total, classSummary.Failed, classSummary.Skipped)))
+                        CancellationTokenSource.Cancel();
+                }
+            }
+
+            return classSummary;
+        }
+        finally
+        {
+            _testClassesSemaphore.Release();
+        }
     }
 
     protected override async Task BeforeTestClassFinishedAsync()
@@ -101,7 +145,7 @@ public class ParallelTestClassRunner : XunitTestClassRunner
     private async Task<object[]> BuildConstructorArgumentsAsync(IXunitTestCase testCase)
     {
         var containerBuilder = new FixtureContainerBuilder();
-        var methodLevelContainer = containerBuilder.BuildContainer(fixtureRegistrations, FixtureRegisterationLevel.Method, classContainer);
+        var methodLevelContainer = containerBuilder.BuildContainer(_fixtureRegistrations, FixtureRegisterationLevel.Method, classContainer);
         await methodLevelContainer.InitializeAsync();
 
         var methodContainer = FixtureContainerMerger.Merge(methodLevelContainer, classContainer);
@@ -120,7 +164,8 @@ public class ParallelTestClassRunner : XunitTestClassRunner
             new ExceptionAggregator(Aggregator), 
             CancellationTokenSource,
             classContainer,
-            fixtureRegistrations).RunAsync();
+            _fixtureRegistrations,
+            _testCasesSemaphore).RunTestsAsync();
 
     private static Exception Unwrap(Exception ex)
     {

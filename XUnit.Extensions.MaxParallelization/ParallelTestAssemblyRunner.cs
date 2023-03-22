@@ -1,7 +1,4 @@
-﻿using System.Reflection;
-using System.Threading;
-using Xunit;
-using Xunit.Abstractions;
+﻿using Xunit.Abstractions;
 using Xunit.Sdk;
 using XUnit.Extensions.MaxParallelization.DI;
 
@@ -10,16 +7,25 @@ public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
 {
     protected FixtureContainer AssemblyContainer;
 
-    private FixtureRegistrationCollection fixtureRegistrationCollection;
+    private FixtureRegistrationCollection _fixtureRegistrationCollection;
+    private SemaphoreSlim _testCollectionsSemaphore;
+    private SemaphoreSlim _testClassesSemaphore;
+    private SemaphoreSlim _testCaseSemaphore;
     public ParallelTestAssemblyRunner(
         ITestAssembly testAssembly,
         IEnumerable<IXunitTestCase> testCases,
         IMessageSink diagnosticMessageSink,
         IMessageSink executionMessageSink,
-        ITestFrameworkExecutionOptions executionOptions) : base(testAssembly, testCases, diagnosticMessageSink, executionMessageSink, executionOptions){ }
+        ITestFrameworkExecutionOptions executionOptions) : base(testAssembly, testCases, diagnosticMessageSink, executionMessageSink, executionOptions) 
+    {
+        int maxDegreeOfParallelism = Environment.ProcessorCount;
+        _testCollectionsSemaphore = new SemaphoreSlim(maxDegreeOfParallelism);
+        _testClassesSemaphore = new SemaphoreSlim(maxDegreeOfParallelism);
+        _testCaseSemaphore = new SemaphoreSlim(maxDegreeOfParallelism);
+    }
     protected override async Task AfterTestAssemblyStartingAsync()
     {
-        fixtureRegistrationCollection = TestAssembly.ResolveFixtureRegistrations();
+        _fixtureRegistrationCollection = TestAssembly.ResolveFixtureRegistrations();
         await base.AfterTestAssemblyStartingAsync();
         await CreateAssemlbyContainerAsync();
     }
@@ -34,7 +40,7 @@ public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
     protected virtual async Task CreateAssemlbyContainerAsync()
     {
         var containerBuilder = new FixtureContainerBuilder();
-        AssemblyContainer = containerBuilder.BuildContainer(fixtureRegistrationCollection, FixtureRegisterationLevel.Assembly, null);
+        AssemblyContainer = containerBuilder.BuildContainer(_fixtureRegistrationCollection, FixtureRegisterationLevel.Assembly, null);
         await AssemblyContainer.InitializeAsync();
     }
 
@@ -42,7 +48,7 @@ public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
     {
         if (TestAssembly.IsParallelizationDisabled())
             return await base.RunTestCollectionsAsync(messageBus, cancellationTokenSource);
-        
+
         var summary = new RunSummary();
 
         var collectionTasks = OrderTestCollections().Select(collection => RunTestCollectionAsync(messageBus, collection.Item1, collection.Item2, cancellationTokenSource));
@@ -65,15 +71,18 @@ public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
     {
         return
             new ParallelTestCollectionRunner(
-                testCollection, 
-                testCases, 
-                DiagnosticMessageSink, 
-                messageBus, 
-                TestCaseOrderer, 
-                new ExceptionAggregator(Aggregator), 
+                testCollection,
+                testCases,
+                DiagnosticMessageSink,
+                messageBus,
+                TestCaseOrderer,
+                new ExceptionAggregator(Aggregator),
                 cancellationTokenSource,
-                fixtureRegistrationCollection,
-                AssemblyContainer).RunAsync();
+                _fixtureRegistrationCollection,
+                AssemblyContainer,
+                _testCollectionsSemaphore,
+                _testClassesSemaphore,
+                _testCaseSemaphore).RunTestsAsync();
     }
 }
 
