@@ -8,9 +8,6 @@ public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
     protected FixtureContainer AssemblyContainer;
 
     private FixtureRegistrationCollection _fixtureRegistrationCollection;
-    private SemaphoreSlim _testCollectionsSemaphore;
-    private SemaphoreSlim _testClassesSemaphore;
-    private SemaphoreSlim _testCaseSemaphore;
     public ParallelTestAssemblyRunner(
         ITestAssembly testAssembly,
         IEnumerable<IXunitTestCase> testCases,
@@ -19,9 +16,6 @@ public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
         ITestFrameworkExecutionOptions executionOptions) : base(testAssembly, testCases, diagnosticMessageSink, executionMessageSink, executionOptions) 
     {
         int maxDegreeOfParallelism = Environment.ProcessorCount;
-        _testCollectionsSemaphore = new SemaphoreSlim(maxDegreeOfParallelism);
-        _testClassesSemaphore = new SemaphoreSlim(maxDegreeOfParallelism);
-        _testCaseSemaphore = new SemaphoreSlim(maxDegreeOfParallelism);
     }
     protected override async Task AfterTestAssemblyStartingAsync()
     {
@@ -52,8 +46,11 @@ public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
         var summary = new RunSummary();
 
         var collectionTasks = OrderTestCollections().Select(collection => RunTestCollectionAsync(messageBus, collection.Item1, collection.Item2, cancellationTokenSource));
-
-        var summaries = await Task.WhenAll(collectionTasks).ConfigureAwait(false);
+        var summaries = new List<RunSummary>();
+        Parallel.ForEach(collectionTasks, async task =>
+        {
+            summaries.Add(await task);
+        });
 
         foreach (var collectionSummary in summaries)
         {
@@ -79,10 +76,7 @@ public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
                 new ExceptionAggregator(Aggregator),
                 cancellationTokenSource,
                 _fixtureRegistrationCollection,
-                AssemblyContainer,
-                _testCollectionsSemaphore,
-                _testClassesSemaphore,
-                _testCaseSemaphore).RunTestsAsync();
+                AssemblyContainer).RunAsync();
     }
 }
 

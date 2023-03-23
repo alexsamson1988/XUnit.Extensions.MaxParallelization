@@ -8,8 +8,6 @@ public class ParallelTestClassRunner : XunitTestClassRunner
 {
     private readonly FixtureRegistrationCollection _fixtureRegistrations;
     private readonly FixtureContainer _collectionContainer;
-    private readonly SemaphoreSlim _testClassesSemaphore;
-    private readonly SemaphoreSlim _testCasesSemaphore;
     private FixtureContainer classContainer;
     public ParallelTestClassRunner(
         ITestClass testClass, 
@@ -21,9 +19,7 @@ public class ParallelTestClassRunner : XunitTestClassRunner
         ExceptionAggregator aggregator, 
         CancellationTokenSource cancellationTokenSource,
         FixtureRegistrationCollection fixtureRegistrations,
-        FixtureContainer collectionContainer,
-        SemaphoreSlim testClassesSemaphore,
-        SemaphoreSlim testCasesSemaphore) : base(
+        FixtureContainer collectionContainer) : base(
             testClass, 
             @class, 
             testCases, 
@@ -36,8 +32,6 @@ public class ParallelTestClassRunner : XunitTestClassRunner
     {
         this._fixtureRegistrations = fixtureRegistrations;
         this._collectionContainer = collectionContainer;
-        this._testClassesSemaphore = testClassesSemaphore;
-        this._testCasesSemaphore = testCasesSemaphore;
     }
     protected override async Task AfterTestClassStartingAsync()
     {
@@ -51,40 +45,32 @@ public class ParallelTestClassRunner : XunitTestClassRunner
 
     public async Task<RunSummary> RunTestsAsync()
     {
-        _testClassesSemaphore.Wait();
-        try
-        {
-            var classSummary = new RunSummary();
+        var classSummary = new RunSummary();
 
-            if (!MessageBus.QueueMessage(new TestClassStarting(TestCases.Cast<ITestCase>(), TestClass)))
-                CancellationTokenSource.Cancel();
-            else
+        if (!MessageBus.QueueMessage(new TestClassStarting(TestCases.Cast<ITestCase>(), TestClass)))
+            CancellationTokenSource.Cancel();
+        else
+        {
+            try
             {
-                try
-                {
-                    await AfterTestClassStartingAsync();
-                    classSummary = await RunTestMethodsAsync();
+                await AfterTestClassStartingAsync();
+                classSummary = await RunTestMethodsAsync();
 
-                    Aggregator.Clear();
-                    await BeforeTestClassFinishedAsync();
+                Aggregator.Clear();
+                await BeforeTestClassFinishedAsync();
 
-                    if (Aggregator.HasExceptions)
-                        if (!MessageBus.QueueMessage(new TestClassCleanupFailure(TestCases.Cast<ITestCase>(), TestClass, Aggregator.ToException())))
-                            CancellationTokenSource.Cancel();
-                }
-                finally
-                {
-                    if (!MessageBus.QueueMessage(new TestClassFinished(TestCases.Cast<ITestCase>(), TestClass, classSummary.Time, classSummary.Total, classSummary.Failed, classSummary.Skipped)))
+                if (Aggregator.HasExceptions)
+                    if (!MessageBus.QueueMessage(new TestClassCleanupFailure(TestCases.Cast<ITestCase>(), TestClass, Aggregator.ToException())))
                         CancellationTokenSource.Cancel();
-                }
             }
+            finally
+            {
+                if (!MessageBus.QueueMessage(new TestClassFinished(TestCases.Cast<ITestCase>(), TestClass, classSummary.Time, classSummary.Total, classSummary.Failed, classSummary.Skipped)))
+                    CancellationTokenSource.Cancel();
+            }
+        }
 
-            return classSummary;
-        }
-        finally
-        {
-            _testClassesSemaphore.Release();
-        }
+        return classSummary;
     }
 
     protected override async Task BeforeTestClassFinishedAsync()
@@ -164,8 +150,7 @@ public class ParallelTestClassRunner : XunitTestClassRunner
             new ExceptionAggregator(Aggregator), 
             CancellationTokenSource,
             classContainer,
-            _fixtureRegistrations,
-            _testCasesSemaphore).RunTestsAsync();
+            _fixtureRegistrations).RunAsync();
 
     private static Exception Unwrap(Exception ex)
     {

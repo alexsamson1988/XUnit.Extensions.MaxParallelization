@@ -24,8 +24,7 @@ public class ParallelTestMethodRunner : XunitTestMethodRunner
         ExceptionAggregator aggregator, 
         CancellationTokenSource cancellationTokenSource,
         FixtureContainer classContainer,
-        FixtureRegistrationCollection fixtureRegistrations,
-        SemaphoreSlim testCasesSemaphore)
+        FixtureRegistrationCollection fixtureRegistrations)
         : base(
             testMethod, 
             @class, 
@@ -38,49 +37,9 @@ public class ParallelTestMethodRunner : XunitTestMethodRunner
             null)
     {
         this._fixtureRegistrations = fixtureRegistrations;
-        this._testCasesSemaphore = testCasesSemaphore;
         this._classContainer = classContainer;
         this._diagnosticMessageSink = diagnosticMessageSink;
         this._classInfos = @class;
-    }
-
-    public async Task<RunSummary> RunTestsAsync()
-    {
-        await _testCasesSemaphore.WaitAsync();
-        try
-        {
-            var methodSummary = new RunSummary();
-
-            if (!MessageBus.QueueMessage(new TestMethodStarting(TestCases.Cast<ITestCase>(), TestMethod)))
-                CancellationTokenSource.Cancel();
-            else
-            {
-                try
-                {
-                    AfterTestMethodStarting();
-                    methodSummary = await RunTestCasesAsync();
-
-                    Aggregator.Clear();
-                    BeforeTestMethodFinished();
-
-                    if (Aggregator.HasExceptions)
-                        if (!MessageBus.QueueMessage(new TestMethodCleanupFailure(TestCases.Cast<ITestCase>(), TestMethod, Aggregator.ToException())))
-                            CancellationTokenSource.Cancel();
-                }
-                finally
-                {
-                    if (!MessageBus.QueueMessage(new TestMethodFinished(TestCases.Cast<ITestCase>(), TestMethod, methodSummary.Time, methodSummary.Total, methodSummary.Failed, methodSummary.Skipped)))
-                        CancellationTokenSource.Cancel();
-
-                }
-            }
-
-            return methodSummary;
-        }
-        finally
-        {
-            _testCasesSemaphore.Release();
-        }
     }
 
     protected override async Task<RunSummary> RunTestCasesAsync()

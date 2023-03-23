@@ -13,10 +13,6 @@ public class ParallelTestCollectionRunner : XunitTestCollectionRunner
     protected FixtureContainer AssemblyFixtureContainer;
     protected FixtureContainer CollectionContainer;
 
-    private readonly SemaphoreSlim _testCollectionsSemaphore;
-    private readonly SemaphoreSlim _testClassesSemaphore;
-    private readonly SemaphoreSlim _testCasesSemaphore;
-
     private FixtureRegistrationCollection fixtureRegistrations;
     public ParallelTestCollectionRunner(
         ITestCollection testCollection, 
@@ -27,10 +23,7 @@ public class ParallelTestCollectionRunner : XunitTestCollectionRunner
         ExceptionAggregator aggregator, 
         CancellationTokenSource cancellationTokenSource,
         FixtureRegistrationCollection fixtureRegistrations,
-        FixtureContainer assemblyFixtureContainer,
-        SemaphoreSlim collectionSemaphore,
-        SemaphoreSlim classSemaphore,
-        SemaphoreSlim testCasesSemaphore) : base(
+        FixtureContainer assemblyFixtureContainer) : base(
             testCollection, 
             testCases, 
             diagnosticMessageSink, 
@@ -40,48 +33,7 @@ public class ParallelTestCollectionRunner : XunitTestCollectionRunner
             cancellationTokenSource)
     {
         AssemblyFixtureContainer = assemblyFixtureContainer;
-        this._testCollectionsSemaphore = collectionSemaphore;
-        this._testClassesSemaphore = classSemaphore;
-        this._testCasesSemaphore = testCasesSemaphore;
         this.fixtureRegistrations = fixtureRegistrations;
-    }
-
-    public async Task<RunSummary> RunTestsAsync()
-    {
-        await _testCollectionsSemaphore.WaitAsync();
-        try
-        {
-            var collectionSummary = new RunSummary();
-
-            if (!MessageBus.QueueMessage(new TestCollectionStarting(TestCases.Cast<ITestCase>(), TestCollection)))
-                CancellationTokenSource.Cancel();
-            else
-            {
-                try
-                {
-                    await AfterTestCollectionStartingAsync();
-                    collectionSummary = await RunTestClassesAsync();
-
-                    Aggregator.Clear();
-                    await BeforeTestCollectionFinishedAsync();
-
-                    if (Aggregator.HasExceptions)
-                        if (!MessageBus.QueueMessage(new TestCollectionCleanupFailure(TestCases.Cast<ITestCase>(), TestCollection, Aggregator.ToException())))
-                            CancellationTokenSource.Cancel();
-                }
-                finally
-                {
-                    if (!MessageBus.QueueMessage(new TestCollectionFinished(TestCases.Cast<ITestCase>(), TestCollection, collectionSummary.Time, collectionSummary.Total, collectionSummary.Failed, collectionSummary.Skipped)))
-                        CancellationTokenSource.Cancel();
-                }
-            }
-
-            return collectionSummary;
-        }
-        finally 
-        { 
-            _testCollectionsSemaphore.Release();
-        }
     }
 
     protected override async Task AfterTestCollectionStartingAsync()
@@ -112,9 +64,13 @@ public class ParallelTestCollectionRunner : XunitTestCollectionRunner
                     (IReflectionTypeInfo)testCasesByClass.Key.Class,
                     testCasesByClass));
 
-        var classSummaries = await Task.WhenAll(testClassesTasks).ConfigureAwait(false); ;
+        var summaries = new List<RunSummary>();
+        Parallel.ForEach(testClassesTasks, async task =>
+        {
+            summaries.Add(await task);
+        });
 
-        foreach (var classSummary in classSummaries)
+        foreach (var classSummary in summaries)
         {
             summary.Aggregate(classSummary);
         }
@@ -135,8 +91,6 @@ public class ParallelTestCollectionRunner : XunitTestCollectionRunner
             new ExceptionAggregator(Aggregator), 
             CancellationTokenSource,
             fixtureRegistrations,
-            mergedContainer,
-            _testClassesSemaphore,
-            _testCasesSemaphore).RunTestsAsync();
+            mergedContainer).RunAsync();
     }
 }
