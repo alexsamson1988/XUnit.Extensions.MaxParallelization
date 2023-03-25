@@ -45,7 +45,11 @@ public class FixtureContainerBuilder
         fixtureRegistrations = fixtureRegistrationCollection
             .GetFixtureRegistrations()
             .Where(fixtureRegistration => fixtureRegistration.RegisterationLevel == fixtureRegisterationLevel)
-            .Select(fixtureRegistration => new FixtureRegistration(fixtureRegistration.FixtureType,fixtureRegistration.FixtureInstanceType, fixtureRegistration.RegisterationLevel,fixtureRegistration.BuildAction))
+            .Select(fixtureRegistration => new FixtureRegistration(
+                fixtureRegistration.FixtureType,
+                fixtureRegistration.FixtureInstanceType, 
+                fixtureRegistration.RegisterationLevel,
+                fixtureRegistration.BuildAction))
             .GroupBy(fixtureRegistration => fixtureRegistration.FixtureType)
             .Select(group => group.First())
             .ToList();

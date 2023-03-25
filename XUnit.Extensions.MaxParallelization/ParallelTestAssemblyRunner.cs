@@ -6,7 +6,6 @@ namespace XUnit.Extensions.MaxParallelization;
 public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
 {
     protected FixtureContainer AssemblyContainer;
-
     private FixtureRegistrationCollection _fixtureRegistrationCollection;
     public ParallelTestAssemblyRunner(
         ITestAssembly testAssembly,
@@ -15,12 +14,11 @@ public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
         IMessageSink executionMessageSink,
         ITestFrameworkExecutionOptions executionOptions) : base(testAssembly, testCases, diagnosticMessageSink, executionMessageSink, executionOptions) 
     {
-        int maxDegreeOfParallelism = Environment.ProcessorCount;
     }
     protected override async Task AfterTestAssemblyStartingAsync()
     {
         _fixtureRegistrationCollection = TestAssembly.ResolveFixtureRegistrations();
-        await base.AfterTestAssemblyStartingAsync();
+        await base.AfterTestAssemblyStartingAsync().ConfigureAwait(false);
         await CreateAssemlbyContainerAsync();
     }
 
@@ -46,11 +44,8 @@ public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
         var summary = new RunSummary();
 
         var collectionTasks = OrderTestCollections().Select(collection => RunTestCollectionAsync(messageBus, collection.Item1, collection.Item2, cancellationTokenSource));
-        var summaries = new List<RunSummary>();
-        Parallel.ForEach(collectionTasks, async task =>
-        {
-            summaries.Add(await task);
-        });
+        var summaries = await Task.WhenAll(collectionTasks).ConfigureAwait(false);
+
 
         foreach (var collectionSummary in summaries)
         {
@@ -58,6 +53,7 @@ public class ParallelTestAssemblyRunner : XunitTestAssemblyRunner
         }
 
         return summary;
+
     }
 
     protected override Task<RunSummary> RunTestCollectionAsync(

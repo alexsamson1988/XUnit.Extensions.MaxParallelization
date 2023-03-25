@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using XUnit.Extensions.MaxParallelization.Tests.Fixtures.Parallel;
+﻿using XUnit.Extensions.MaxParallelization.Tests.Fixtures.Parallel;
 
 namespace XUnit.Extensions.MaxParallelization.Tests.FixtureInjectionTests.ClassFixtureTests;
 public class ClassFixtureTest2

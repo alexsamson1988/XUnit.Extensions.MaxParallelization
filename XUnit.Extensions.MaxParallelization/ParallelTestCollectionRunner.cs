@@ -40,7 +40,7 @@ public class ParallelTestCollectionRunner : XunitTestCollectionRunner
     {
         var containerBuilder = new FixtureContainerBuilder();
         CollectionContainer = containerBuilder.BuildContainer(fixtureRegistrations, FixtureRegisterationLevel.Collection,AssemblyFixtureContainer);
-        await CollectionContainer.InitializeAsync();
+        await CollectionContainer.InitializeAsync().ConfigureAwait(false);
         await base.AfterTestCollectionStartingAsync();
     }
 
@@ -64,11 +64,7 @@ public class ParallelTestCollectionRunner : XunitTestCollectionRunner
                     (IReflectionTypeInfo)testCasesByClass.Key.Class,
                     testCasesByClass));
 
-        var summaries = new List<RunSummary>();
-        Parallel.ForEach(testClassesTasks, async task =>
-        {
-            summaries.Add(await task);
-        });
+        var summaries = await Task.WhenAll(testClassesTasks).ConfigureAwait(false);
 
         foreach (var classSummary in summaries)
         {
